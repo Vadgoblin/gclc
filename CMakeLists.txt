@@ -1,14 +1,10 @@
 cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 project(GCLC LANGUAGES CXX)
 
+include(GNUInstallDirs)
+
 set(gui AUTO CACHE STRING "build the GCLC GUI")
 set_property(CACHE gui PROPERTY STRINGS AUTO ON OFF)
-
-# default installation location to “executable/”
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/executable CACHE PATH
-    "installation prefix" FORCE)
-endif()
 
 # enable -W and -Wall if possible
 include(CheckCXXCompilerFlag)
@@ -109,14 +105,14 @@ add_executable(gclc
   source/AlgebraicMethods/Log.cpp
   source/AlgebraicMethods/ITimeOut.cpp
   source/AlgebraicMethods/Groebner.cpp
-  source/Import/ListOfFaces.cpp 
+  source/Import/ListOfFaces.cpp
 )
 
 # Update ISO to C++17
 target_compile_features(gclc PRIVATE cxx_std_17)
 
 install(TARGETS gclc
-  RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 add_subdirectory(source)
