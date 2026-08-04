@@ -103,3 +103,17 @@ target_link_libraries(gclc-gui
 install(TARGETS gclc-gui
         DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+
+# install desktop integration
+install(FILES resources/io.github.ADG_Foundation.gclc.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)
+
+install(FILES resources/io.github.ADG_Foundation.gclc.metainfo.xml
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo
+)
+
+set(ICON_RESOLUTIONS "32;64;128;256;512")
+foreach(RES IN LISTS ICON_RESOLUTIONS)
+    install(FILES resources/icon/${RES}.png DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${RES}x${RES}/apps" RENAME "io.github.ADG_Foundation.gclc.png")
+endforeach()
