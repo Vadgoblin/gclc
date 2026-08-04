@@ -105,15 +105,18 @@ install(TARGETS gclc-gui
 )
 
 # install desktop integration
-install(FILES resources/io.github.ADG_Foundation.gclc.desktop
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+install(FILES "resources/${GCLC_APP_ID}.desktop"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
 )
 
-install(FILES resources/io.github.ADG_Foundation.gclc.metainfo.xml
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo
+install(FILES "resources/${GCLC_APP_ID}.metainfo.xml"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
 )
 
 set(ICON_RESOLUTIONS "32;64;128;256;512")
 foreach(RES IN LISTS ICON_RESOLUTIONS)
-    install(FILES resources/icon/${RES}.png DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${RES}x${RES}/apps" RENAME "io.github.ADG_Foundation.gclc.png")
+    install(FILES "resources/icon/${RES}.png"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${RES}x${RES}/apps"
+            RENAME "${GCLC_APP_ID}.png"
+    )
 endforeach()

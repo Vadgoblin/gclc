@@ -3,6 +3,7 @@ project(GCLC LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
+set(GCLC_APP_ID "io.github.ADG_Foundation.gclc")
 set(gui AUTO CACHE STRING "build the GCLC GUI")
 set_property(CACHE gui PROPERTY STRINGS AUTO ON OFF)
 
