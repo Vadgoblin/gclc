@@ -105,7 +105,7 @@ add_executable(gclc
   source/AlgebraicMethods/Log.cpp
   source/AlgebraicMethods/ITimeOut.cpp
   source/AlgebraicMethods/Groebner.cpp
-  source/Import/ListOfFaces.cpp
+  source/Import/ListOfFaces.cpp 
 )
 
 # Update ISO to C++17
