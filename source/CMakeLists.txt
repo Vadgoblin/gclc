@@ -97,9 +97,28 @@ if(gui)
 
   target_link_libraries(gclc-gui
     PRIVATE Qt6::Core Qt6::Gui Qt6::PrintSupport Qt6::Widgets)
-  
+
   install(TARGETS gclc-gui
           DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
+
+  # install desktop integration
+  set(GCLC_APP_ID "io.github.ADG_Foundation.gclc")
+
+  install(FILES "../flatpak/${GCLC_APP_ID}.desktop"
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/applications"
+  )
+
+  install(FILES "../flatpak/${GCLC_APP_ID}.metainfo.xml"
+          DESTINATION "${CMAKE_INSTALL_DATADIR}/metainfo"
+  )
+
+  set(ICON_RESOLUTIONS "32;64;128;256;512")
+  foreach(RES IN LISTS ICON_RESOLUTIONS)
+    install(FILES "../flatpak/icon/${RES}.png"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/${RES}x${RES}/apps"
+            RENAME "${GCLC_APP_ID}.png"
+    )
+  endforeach ()
 
 endif()
