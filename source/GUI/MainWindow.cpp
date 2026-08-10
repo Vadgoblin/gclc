@@ -571,31 +571,31 @@ void MainWindow::Export(enum exportFormat format) {
   }
 
 
-  QString defaultFilePath;
+  QString defaultPath;
   if (ActiveGCLCDoc->getFileName().toStdString() == "untitled.gcl") {
-    QString defaultPath = m_sWorkingGCLDirectory;
-    if (defaultPath.isEmpty() || defaultPath == ".") {
-      defaultPath =  QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    QString defaultDir = m_sWorkingGCLDirectory;
+    if (defaultDir.isEmpty() || defaultDir == ".") {
+      defaultDir =  QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     }
 
-    defaultFilePath = QDir(defaultPath).filePath("untitled").append(ext);
+    defaultPath = QDir(defaultDir).filePath("untitled").append(ext);
   }
   else {
-    defaultFilePath = ActiveGCLCDoc->getFileName();
+    defaultPath = ActiveGCLCDoc->getFileName();
 
-    qsizetype pos = defaultFilePath.lastIndexOf(".gcl");
+    qsizetype pos = defaultPath.lastIndexOf(".gcl");
     if (pos != -1) {
-      defaultFilePath.truncate(pos);
+      defaultPath.truncate(pos);
     }
 
-    defaultFilePath.append(ext);
+    defaultPath.append(ext);
   }
 
 
   QString toSaveInFileName = QFileDialog::getSaveFileName(
       this,
       title,
-      defaultFilePath,
+      defaultPath,
       filters.join(";;")
   );
 
