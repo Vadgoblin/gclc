@@ -570,35 +570,43 @@ void MainWindow::Export(enum exportFormat format) {
     break;
   }
 
-  QFileDialog dialog(this, title, m_sWorkingExportDirectory);
-  dialog.setAcceptMode(QFileDialog::AcceptSave);
-  dialog.setNameFilters(filters);
-  //    QString croped_fileName=ActiveGCLCDoc->getFileName().section(".",0,0);
-  dialog.setDirectory(m_sWorkingExportDirectory);
-  QFileInfo fileInfo(ActiveGCLCDoc->getFileName());
-  dialog.selectFile(fileInfo.baseName());
 
-  if (dialog.exec() == QDialog::Accepted) {
-    QString toSaveInFileName = dialog.selectedFiles()[0];
-    QString selectedFilter = dialog.selectedNameFilter();
+  QString defaultFilePath;
+  if (ActiveGCLCDoc->getFileName().toStdString() == "untitled.gcl") {
+    QString defaultPath = m_sWorkingGCLDirectory;
+    if (defaultPath.isEmpty() || defaultPath == ".") {
+      defaultPath =  QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    }
 
-    if (selectedFilter == "PNG Files (*.png)")
-      ext = ".png";
-    if (selectedFilter == "BMP Files (*.bmp)")
-      ext = ".bmp";
-    if (selectedFilter == "JPG Files (*.jpg)")
-      ext = ".jpg";
-
-    if (toSaveInFileName == "")
-      return;
-    if (!toSaveInFileName.endsWith(ext))
-      toSaveInFileName += ext;
-
-    ActiveGCLCDoc->Export(format, toSaveInFileName);
-
-    QFileInfo fileInfo(toSaveInFileName);
-    m_sWorkingExportDirectory = fileInfo.path();
+    defaultFilePath = QDir(defaultPath).filePath("untitled").append(ext);
   }
+  else {
+    defaultFilePath = ActiveGCLCDoc->getFileName();
+
+    qsizetype pos = defaultFilePath.lastIndexOf(".gcl");
+    if (pos != -1) {
+      defaultFilePath.truncate(pos);
+    }
+
+    defaultFilePath.append(ext);
+  }
+
+
+  QString toSaveInFileName = QFileDialog::getSaveFileName(
+      this,
+      title,
+      defaultFilePath,
+      filters.join(";;")
+  );
+
+  if (toSaveInFileName.isEmpty())
+    return;
+
+  ActiveGCLCDoc->Export(format, toSaveInFileName);
+
+  QFileInfo fileInfo(toSaveInFileName);
+  m_sWorkingExportDirectory = fileInfo.path();
+
 }
 
 // --------------------------------------------------------------------------------------------
