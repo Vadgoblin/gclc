@@ -640,26 +640,38 @@ void MainWindow::ExportXML() {
   if (!ActiveGCLCDoc->isFileCompiled())
     return;
 
-  QStringList filters;
-  QString title = "Export to XML Format Specification";
-  QString ext = ".xml";
-  filters << "XML Files (*.xml)";
+  QString defaultPath;
+  if (ActiveGCLCDoc->getFileName().toStdString() == "untitled.gcl") {
+    QString defaultDir = m_sWorkingGCLDirectory;
+    if (defaultDir.isEmpty() || defaultDir == ".") {
+      defaultDir =  QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    }
 
-  QFileDialog dialog(this, title, m_sWorkingGCLDirectory);
-  dialog.setAcceptMode(QFileDialog::AcceptSave);
-  dialog.setNameFilters(filters);
-
-  QString croped_fileName = ActiveGCLCDoc->getFileName().section(".", 0, 0);
-  dialog.selectFile(croped_fileName);
-
-  if (dialog.exec() == QDialog::Accepted) {
-    QString toSaveInFileName = dialog.selectedFiles()[0];
-    if (toSaveInFileName == "")
-      return;
-    if (!toSaveInFileName.endsWith(ext))
-      toSaveInFileName += ext;
-    ActiveGCLCDoc->ExportToXML(toSaveInFileName);
+    defaultPath = QDir(defaultDir).filePath("untitled").append(".xml");
   }
+  else {
+    defaultPath = ActiveGCLCDoc->getFileName();
+
+    qsizetype pos = defaultPath.lastIndexOf(".gcl");
+    if (pos != -1) {
+      defaultPath.truncate(pos);
+    }
+
+    defaultPath.append(".xml");
+  }
+
+
+  QString toSaveInFileName = QFileDialog::getSaveFileName(
+      this,
+      "Export to XML Format Specification",
+      defaultPath,
+      "XML Files (*.xml)"
+  );
+
+  if (toSaveInFileName.isEmpty())
+    return;
+
+  ActiveGCLCDoc->ExportToXML(toSaveInFileName);
 }
 
 // --------------------------------------------------------------------------------------------
