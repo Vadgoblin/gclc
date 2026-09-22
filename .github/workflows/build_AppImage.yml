@@ -1,0 +1,57 @@
+name: Build AppImage
+on:
+  release:
+
+jobs:
+  buildLinuxStatic:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install Qt and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3 ninja-build cmake git gcc \
+            libc6-dev perl build-essential libdrm-dev \
+            libgles2-mesa-dev libgl1-mesa-dev libegl1-mesa-dev libglu1-mesa-dev libglfw3-dev  \
+            libfreetype6-dev libfreetype-dev libfontconfig1 libfontconfig1-dev fontconfig libfontconfig-dev \
+            libx11-xcb-dev libxrender-dev libxi-dev libxcb-xinerama0 libglx-dev \
+            libxcb-render-util0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-xfixes0-dev libxcb-xkb-dev \
+            libxcb-sync-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-image0-dev \
+            libxcb-util-dev libxcb-cursor-dev libxkbcommon-dev libxkbcommon-x11-dev libxext-dev \
+            libx11-dev
+
+      - name: Configure and install Qt
+        run: |
+          cd "${{ runner.temp }}"
+          git clone --depth 1 -b 6.5.2 https://github.com/qt/qt5.git qt6
+          cd qt6
+          ./init-repository --module-subset=qtbase
+          mkdir build
+          cd build
+          ../configure -static -release -no-pch -skip webengine -nomake tests -nomake examples -fontconfig -prefix "${{ runner.temp }}/qtStatic" -xcb-xlib -- -Wno-dev
+          cmake --build . --parallel
+          sudo cmake --install .
+
+      - name: Write version info
+        run: |
+          echo "#pragma once" > source/Utils/Version.h
+          echo "#define GCLC_VERSION \"$(git describe --tags)\"" >> source/Utils/Version.h
+
+      - name: Make CLI and GUI version
+        run: |
+          ${{ runner.temp }}/qtStatic/bin/qt-cmake -B build -S .
+          cd build
+          make
+          cmake --install build --prefix ./install 
+          cd ..
+          cp build/gclc executable/
+          cp build/source/gclc-gui executable/
+
+      - name: Upload executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-static-build-artifact
+          path: executable/
