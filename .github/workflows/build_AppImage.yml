@@ -9,7 +9,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # 1. Check if static Qt is already cached
+      - name: Install build and link dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config cmake build-essential gcc g++ \
+            libgl1-mesa-dev libglx-dev libegl1-mesa-dev libglu1-mesa-dev \
+            libfreetype6-dev libfontconfig1-dev fontconfig \
+            libx11-dev libx11-xcb-dev libxrender-dev libxi-dev libxext-dev \
+            libdrm-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev \
+            libxcb-cursor-dev libxcb-util-dev libxcb-keysyms1-dev \
+            libxcb-image0-dev libxcb-shm0-dev libxcb-sync-dev \
+            libxcb-xfixes0-dev libxcb-render-util0-dev libxcb-shape0-dev \
+            libxcb-randr0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-xinerama0-dev
+
+      # Check if static Qt is already cached
       - name: Cache Static Qt
         id: cache-qt
         uses: actions/cache@v4
@@ -17,22 +32,6 @@ jobs:
           path: ${{ runner.temp }}/qtStatic
           key: qt-6.5.2-static-${{ runner.os }}-build-v1
 
-      # 2. Install dependencies needed to compile Qt only when cache misses
-      - name: Install Qt build dependencies
-        if: steps.cache-qt.outputs.cache-hit != 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            perl pkg-config ninja-build libdrm-dev \
-            libfreetype6-dev libfontconfig1-dev fontconfig \
-            libx11-xcb-dev libxrender-dev libxi-dev libxcb-xinerama0 \
-            libxcb-render-util0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-xfixes0-dev \
-            libxcb-xkb-dev libxcb-sync-dev libxcb-shm0-dev libxcb-icccm4-dev \
-            libxcb-keysyms1-dev libxcb-image0-dev libxcb-util-dev libxcb-cursor-dev \
-            libxkbcommon-dev libxkbcommon-x11-dev libxext-dev libx11-dev \
-            libgles2-mesa-dev libgl1-mesa-dev libegl1-mesa-dev libglu1-mesa-dev libglfw3-dev libglx-dev
-
-      # 3. Compile and install Qt only on cache miss
       - name: Configure and install Qt
         if: steps.cache-qt.outputs.cache-hit != 'true'
         run: |
@@ -50,13 +49,6 @@ jobs:
           cmake --build . --parallel
           cmake --install .
 
-      # 4. Minimal runtime & link headers needed every run to build GCLC
-      - name: Install GCLC build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake build-essential gcc g++ \
-            libgl1-mesa-dev libglu1-mesa-dev libx11-dev libxkbcommon-dev libfontconfig1-dev
-
       - name: Write version info
         run: |
           echo "#pragma once" > source/Utils/Version.h
@@ -67,6 +59,7 @@ jobs:
           ${{ runner.temp }}/qtStatic/bin/qt-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel $(nproc)
           cmake --install build --prefix AppDir/usr
+          rm AppDir/usr/bin/gclc
 
       - name: Upload executables
         uses: actions/upload-artifact@v4
