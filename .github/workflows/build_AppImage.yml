@@ -61,8 +61,24 @@ jobs:
           cmake --install build --prefix AppDir/usr
           rm AppDir/usr/bin/gclc
 
+      - name: Package into AppImage
+        run: |
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod u+x linuxdeploy-x86_64.AppImage
+          ./linuxdeploy-x86_64.AppImage --appimage-extract 
+          mv squashfs-root linuxdeploy-root
+          
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          ./linuxdeploy-root/AppRun \
+            --appdir AppDir \
+            --desktop-file AppDir/usr/share/applications/io.github.ADG_Foundation.gclc.desktop \
+            --executable AppDir/usr/bin/gclc-gui \
+            --output appimage
+          
+          ls -la
+
       - name: Upload executables
         uses: actions/upload-artifact@v4
         with:
-          name: linux-static-build-artifact
-          path: AppDir/
+          name: GCLC-x86_64.AppImage
+          path: GCLC-x86_64.AppImage
