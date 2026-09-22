@@ -6,6 +6,8 @@ on:
 jobs:
   buildLinuxStatic:
     runs-on: ubuntu-22.04
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -31,8 +33,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/qtStatic
-          # TODO: find a better way to detect if this file changes
-          key: qt-6.5.2-static-${{ runner.os }}-${{ hashFiles('.github/workflows/*.{yml,yaml}') }}
+          # TODO: find a way to avoid hardcoding the files name inside the file
+          key: qt-6.5.2-static-${{ runner.os }}-${{ hashFiles('.github/workflows/build_AppImage.yml') }}
 
       - name: Configure and install Qt
         if: steps.cache-qt.outputs.cache-hit != 'true'
@@ -72,6 +74,8 @@ jobs:
           mv squashfs-root linuxdeploy-root
           
           export APPIMAGE_EXTRACT_AND_RUN=1
+          export VERSION="${{ github.ref_name }}"
+          
           ./linuxdeploy-root/AppRun \
             --appdir AppDir \
             --desktop-file AppDir/usr/share/applications/io.github.ADG_Foundation.gclc.desktop \
@@ -82,5 +86,5 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            GCLC-x86_64.AppImage
+            GCLC-${{ github.ref_name }}-x86_64.AppImage
           tag_name: ${{ github.ref_name }}
