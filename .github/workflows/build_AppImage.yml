@@ -1,6 +1,7 @@
 name: Build AppImage
 on:
   release:
+    types: [published]
 
 jobs:
   buildLinuxStatic:
