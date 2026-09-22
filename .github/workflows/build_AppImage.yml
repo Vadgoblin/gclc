@@ -77,8 +77,9 @@ jobs:
             --executable AppDir/usr/bin/gclc-gui \
             --output appimage
 
-      - name: Upload executables
-        uses: actions/upload-artifact@v4
+      - name: Upload to release page
+        uses: softprops/action-gh-release@v3
         with:
-          name: GCLC-x86_64.AppImage
-          path: GCLC-x86_64.AppImage
+          files: |
+            GCLC-x86_64.AppImage
+          tag_name: ${{ github.ref_name }}
