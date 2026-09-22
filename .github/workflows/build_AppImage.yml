@@ -1,0 +1,84 @@
+name: Build AppImage
+on:
+  release:
+
+jobs:
+  buildLinuxStatic:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install build and link dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config cmake build-essential gcc g++ \
+            libgl1-mesa-dev libglx-dev libegl1-mesa-dev libglu1-mesa-dev \
+            libfreetype6-dev libfontconfig1-dev fontconfig \
+            libx11-dev libx11-xcb-dev libxrender-dev libxi-dev libxext-dev \
+            libdrm-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev \
+            libxcb-cursor-dev libxcb-util-dev libxcb-keysyms1-dev \
+            libxcb-image0-dev libxcb-shm0-dev libxcb-sync-dev \
+            libxcb-xfixes0-dev libxcb-render-util0-dev libxcb-shape0-dev \
+            libxcb-randr0-dev libxcb-xkb-dev libxcb-icccm4-dev libxcb-xinerama0-dev
+
+      # Check if static Qt is already cached
+      - name: Cache Static Qt
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/qtStatic
+          key: qt-6.5.2-static-${{ runner.os }}-build-v1
+
+      - name: Configure and install Qt
+        if: steps.cache-qt.outputs.cache-hit != 'true'
+        run: |
+          cd "${{ runner.temp }}"
+          rm -rf qt6 qt-build
+          git clone --depth 1 -b 6.5.2 https://github.com/qt/qt5.git qt6
+          cd qt6
+          ./init-repository --module-subset=qtbase
+
+          # Build directly inside qtbase to avoid building extra modules
+          cd qtbase
+          mkdir -p build && cd build
+          ../configure -static -release -no-pch -nomake tests -nomake examples \
+            -system-freetype -fontconfig -prefix "${{ runner.temp }}/qtStatic" -xcb-xlib -- -Wno-dev
+          cmake --build . --parallel
+          cmake --install .
+
+      - name: Write version info
+        run: |
+          echo "#pragma once" > source/Utils/Version.h
+          echo "#define GCLC_VERSION \"$(git describe --tags)\"" >> source/Utils/Version.h
+
+      - name: Make GUI version
+        run: |
+          ${{ runner.temp }}/qtStatic/bin/qt-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          cmake --install build --prefix AppDir/usr
+          rm AppDir/usr/bin/gclc
+
+      - name: Package into AppImage
+        run: |
+          wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod u+x linuxdeploy-x86_64.AppImage
+          ./linuxdeploy-x86_64.AppImage --appimage-extract 
+          mv squashfs-root linuxdeploy-root
+          
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          ./linuxdeploy-root/AppRun \
+            --appdir AppDir \
+            --desktop-file AppDir/usr/share/applications/io.github.ADG_Foundation.gclc.desktop \
+            --executable AppDir/usr/bin/gclc-gui \
+            --output appimage
+          
+          ls -la
+
+      - name: Upload executables
+        uses: actions/upload-artifact@v4
+        with:
+          name: GCLC-x86_64.AppImage
+          path: GCLC-x86_64.AppImage
