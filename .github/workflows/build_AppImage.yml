@@ -30,7 +30,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ runner.temp }}/qtStatic
-          key: qt-6.5.2-static-${{ runner.os }}-build-v1
+          # TODO: find a better way to detect if this file changes
+          key: qt-6.5.2-static-${{ runner.os }}-${{ hashFiles('.github/workflows/*.{yml,yaml}') }}
 
       - name: Configure and install Qt
         if: steps.cache-qt.outputs.cache-hit != 'true'
@@ -45,6 +46,7 @@ jobs:
           cd qtbase
           mkdir -p build && cd build
           ../configure -static -release -no-pch -nomake tests -nomake examples \
+            -no-icu -no-glib \
             -system-freetype -fontconfig -prefix "${{ runner.temp }}/qtStatic" -xcb-xlib -- -Wno-dev
           cmake --build . --parallel
           cmake --install .
@@ -74,8 +76,6 @@ jobs:
             --desktop-file AppDir/usr/share/applications/io.github.ADG_Foundation.gclc.desktop \
             --executable AppDir/usr/bin/gclc-gui \
             --output appimage
-          
-          ls -la
 
       - name: Upload executables
         uses: actions/upload-artifact@v4
