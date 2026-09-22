@@ -9,38 +9,60 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Install Qt and dependencies
+      # 1. Check if static Qt is already cached
+      - name: Cache Static Qt
+        id: cache-qt
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/qtStatic
+          key: qt-6.5.2-static-${{ runner.os }}-build-v1
+
+      # 2. Install dependencies needed to compile Qt only when cache misses
+      - name: Install Qt build dependencies
+        if: steps.cache-qt.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            python3 ninja-build cmake git gcc \
-            libc6-dev perl build-essential libdrm-dev \
-            libgles2-mesa-dev libgl1-mesa-dev libegl1-mesa-dev libglu1-mesa-dev libglfw3-dev  \
-            libfreetype6-dev libfreetype-dev libfontconfig1 libfontconfig1-dev fontconfig libfontconfig-dev \
-            libx11-xcb-dev libxrender-dev libxi-dev libxcb-xinerama0 libglx-dev \
-            libxcb-render-util0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-xfixes0-dev libxcb-xkb-dev \
-            libxcb-sync-dev libxcb-shm0-dev libxcb-icccm4-dev libxcb-keysyms1-dev libxcb-image0-dev \
-            libxcb-util-dev libxcb-cursor-dev libxkbcommon-dev libxkbcommon-x11-dev libxext-dev \
-            libx11-dev
+            perl pkg-config ninja-build libdrm-dev \
+            libfreetype6-dev libfontconfig1-dev fontconfig \
+            libx11-xcb-dev libxrender-dev libxi-dev libxcb-xinerama0 \
+            libxcb-render-util0-dev libxcb-shape0-dev libxcb-randr0-dev libxcb-xfixes0-dev \
+            libxcb-xkb-dev libxcb-sync-dev libxcb-shm0-dev libxcb-icccm4-dev \
+            libxcb-keysyms1-dev libxcb-image0-dev libxcb-util-dev libxcb-cursor-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libxext-dev libx11-dev \
+            libgles2-mesa-dev libgl1-mesa-dev libegl1-mesa-dev libglu1-mesa-dev libglfw3-dev libglx-dev
 
+      # 3. Compile and install Qt only on cache miss
       - name: Configure and install Qt
+        if: steps.cache-qt.outputs.cache-hit != 'true'
         run: |
           cd "${{ runner.temp }}"
+          rm -rf qt6 qt-build
           git clone --depth 1 -b 6.5.2 https://github.com/qt/qt5.git qt6
           cd qt6
           ./init-repository --module-subset=qtbase
-          mkdir build
-          cd build
-          ../configure -static -release -no-pch -skip webengine -nomake tests -nomake examples -fontconfig -prefix "${{ runner.temp }}/qtStatic" -xcb-xlib -- -Wno-dev
+
+          # Build directly inside qtbase to avoid building extra modules
+          cd qtbase
+          mkdir -p build && cd build
+          ../configure -static -release -no-pch -nomake tests -nomake examples \
+            -system-freetype -fontconfig -prefix "${{ runner.temp }}/qtStatic" -xcb-xlib -- -Wno-dev
           cmake --build . --parallel
-          sudo cmake --install .
+          cmake --install .
+
+      # 4. Minimal runtime & link headers needed every run to build GCLC
+      - name: Install GCLC build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential gcc g++ \
+            libgl1-mesa-dev libglu1-mesa-dev libx11-dev libxkbcommon-dev libfontconfig1-dev
 
       - name: Write version info
         run: |
           echo "#pragma once" > source/Utils/Version.h
           echo "#define GCLC_VERSION \"$(git describe --tags)\"" >> source/Utils/Version.h
 
-      - name: Make CLI and GUI version
+      - name: Make GUI version
         run: |
           ${{ runner.temp }}/qtStatic/bin/qt-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
           cmake --build build --parallel $(nproc)
