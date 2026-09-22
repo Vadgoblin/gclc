@@ -42,16 +42,12 @@ jobs:
 
       - name: Make CLI and GUI version
         run: |
-          ${{ runner.temp }}/qtStatic/bin/qt-cmake -B build -S .
-          cd build
-          make
-          cmake --install build --prefix ./install 
-          cd ..
-          cp build/gclc executable/
-          cp build/source/gclc-gui executable/
+          ${{ runner.temp }}/qtStatic/bin/qt-cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+          cmake --install build --prefix AppDir/usr
 
       - name: Upload executables
         uses: actions/upload-artifact@v4
         with:
           name: linux-static-build-artifact
-          path: executable/
+          path: AppDir/
