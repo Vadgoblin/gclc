@@ -66,7 +66,6 @@ mkdir -p "${GCLC_SRC_SHADOW}"
 
 echo ">>> Whitelisting project source files..."
 # Copy only the root CMakeLists.txt and the source directory
-ls ${SRC_DIR}
 cp "${SRC_DIR}/CMakeLists.txt" "${GCLC_SRC_SHADOW}/"
 cp -r "${SRC_DIR}/flatpak" "${GCLC_SRC_SHADOW}/"
 cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
