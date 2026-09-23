@@ -1,0 +1,21 @@
+mkdir -p ./qtStatic
+
+docker run --rm \
+      -v "$(pwd)/build-qt.sh:/build-qt.sh:ro" \
+      -v "$(pwd)/qtStatic:/out/" \
+      -e HOST_UID="$(id -u)" \
+      -e HOST_GID="$(id -g)" \
+      ubuntu:22.04 /build-qt.sh
+
+
+mkdir -p ./dist
+
+docker run --rm \
+  -v "$(pwd)/build-app.sh:/build-app.sh:ro" \
+  -v "$(pwd)/..:/app-src:ro" \
+  -v "$(pwd)/qtStatic:/qtStatic:ro" \
+  -v "$(pwd)/dist:/out" \
+  -e APP_VERSION="0.0.3" \
+  -e HOST_UID="$(id -u)" \
+  -e HOST_GID="$(id -g)" \
+  ubuntu:22.04 /build-app.sh
