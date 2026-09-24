@@ -5,7 +5,6 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Paths inside the container
 QT_INSTALL_DIR="/cache/qtStatic"
-QT_BUILD_DIR="/cache/qt-build"
 GCLC_BUILD_DIR="/cache/gclc-build"
 APPDIR="/tmp/AppDir"
 OUT_DIR="/out"
@@ -31,17 +30,17 @@ if [ -f "${QT_INSTALL_DIR}/bin/qt-cmake" ]; then
   echo ">>> [Cache Hit] Found static Qt installation at ${QT_INSTALL_DIR}. Skipping Qt build."
 else
   echo ">>> [Cache Miss] Compiling static Qt 6.5.2..."
-  mkdir -p "${QT_BUILD_DIR}"
-  cd "${QT_BUILD_DIR}"
 
-  if [ ! -d "qt5" ]; then
-    git clone --depth 1 -b 6.5.2 https://github.com/qt/qt5.git qt5
-    cd qt5
-    ./init-repository --module-subset=qtbase
-    cd ..
-  fi
+  QT_TMP_BUILD="/tmp/qt-build"
+  rm -rf "${QT_TMP_BUILD}"
+  mkdir -p "${QT_TMP_BUILD}"
+  cd "${QT_TMP_BUILD}"
 
-  mkdir -p qt5/qtbase/build && cd qt5/qtbase/build
+  git clone --depth 1 -b 6.5.2 https://github.com/qt/qt5.git qt5
+  cd qt5
+  ./init-repository --module-subset=qtbase
+
+  mkdir -p qtbase/build && cd qtbase/build
   ../configure -static -release -no-pch -nomake tests -nomake examples \
     -no-icu -no-glib \
     -system-freetype -fontconfig \
@@ -50,6 +49,10 @@ else
 
   cmake --build . --parallel "$(nproc)"
   cmake --install .
+
+  # Cleanup
+  cd /
+  rm -rf "${QT_TMP_BUILD}"
 fi
 
 # ---------------------------------------------------------
@@ -64,15 +67,16 @@ GCLC_SRC_SHADOW="/tmp/gclc-src"
 rm -rf "${GCLC_SRC_SHADOW}"
 mkdir -p "${GCLC_SRC_SHADOW}"
 
-echo ">>> Whitelisting project source files..."
-# Copy only the root CMakeLists.txt and the source directory
+echo ">>> Copying project source files..."
+# Copy only the relevant files to a writeable location.
+# Needed for generating Version.h
 cp "${SRC_DIR}/CMakeLists.txt" "${GCLC_SRC_SHADOW}/"
 cp -r "${SRC_DIR}/flatpak" "${GCLC_SRC_SHADOW}/"
 cp -r "${SRC_DIR}/source" "${GCLC_SRC_SHADOW}/"
 
 cd "${GCLC_SRC_SHADOW}"
 
-# Generate Version.h inside the whitelisted source shadow
+# Generate Version.h inside the writeable source shadow
 VERSION_STR="${APP_VERSION:-$(git describe --tags 2>/dev/null || echo "dev")}"
 mkdir -p source/Utils
 cat <<EOF > source/Utils/Version.h
