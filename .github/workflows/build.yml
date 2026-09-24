@@ -13,12 +13,12 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # needed so git describe finds release tags
 
       - name: Restore Qt build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .build-cache
           key: qt-cache-${{ runner.os }}-${{ hashFiles('package/build-appimage.sh') }}
