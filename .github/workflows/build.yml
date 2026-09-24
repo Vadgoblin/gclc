@@ -17,12 +17,6 @@ jobs:
         with:
           fetch-depth: 0 # needed so git describe finds release tags
 
-      - name: Restore Qt build cache
-        uses: actions/cache@v6
-        with:
-          path: .build-cache
-          key: qt-cache-${{ runner.os }}-${{ hashFiles('package/build-appimage.sh') }}
-
       - name: Build AppImage via Docker
         run: make -C package appimage VERSION=${{ github.ref_name }}
 
