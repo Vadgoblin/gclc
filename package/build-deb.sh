@@ -8,6 +8,9 @@ OUT_DIR="/out"
 BUILD_DIR="/tmp/gclc-deb-build"
 GCLC_SRC_SHADOW="/tmp/gclc-src"
 
+CLEAN_VER="${APP_VERSION#v}" # Shell built-in, strips leading 'v'
+CLEAN_VER="${CLEAN_VER//_/-}" # Replaces '_' with '-'
+
 echo ">>> 1. Installing Debian build tools and Qt6 packages..."
 apt-get update && apt-get install -y --no-install-recommends \
   qt6-base-dev libqt6opengl6-dev \
@@ -40,7 +43,8 @@ mkdir -p "${BUILD_DIR}"
 
 cmake -B "${BUILD_DIR}" -S "${GCLC_SRC_SHADOW}" \
   -DCMAKE_BUILD_TYPE=Release \
-  -Dgui=ON
+  -Dgui=ON \
+  -DCPACK_PACKAGE_VERSION="${CLEAN_VER}"
 
 cmake --build "${BUILD_DIR}" --parallel "$(nproc)"
 
