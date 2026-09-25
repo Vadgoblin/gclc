@@ -1,0 +1,34 @@
+sudo apt-get update
+sudo apt-get install -y \
+    qt6-base-dev libqt6opengl6-dev \
+    cmake gcc \
+    libgles2-mesa-dev libgl1-mesa-dev libegl1-mesa-dev libglu1-mesa-dev libglfw3-dev  \
+    libx11-xcb-dev libxrender-dev libxi-dev libxcb-xinerama0 libglx-dev \
+    libxkbcommon-dev libxkbcommon-x11-dev libxcb-xkb-dev \
+    file dpkg-dev
+
+
+cmake -B build -DCMAKE_BUILD_TYPE=Release -Dgui=ON
+cmake --build build -j$(nproc)
+cd build
+cpack -G DEB
+
+
+
+distrobox-ephemeral --image almalinux:9
+
+dnf install -y epel-release
+dnf install -y \
+    gcc-c++ \
+    cmake \
+    make \
+    rpm-build \
+    file \
+    qt6-qtbase-devel \
+    hicolor-icon-theme
+dnf clean all
+
+cmake -B build -DCMAKE_BUILD_TYPE=Release -Dgui=ON
+cmake --build build -j$(nproc)
+cd build
+cpack -G RPM
