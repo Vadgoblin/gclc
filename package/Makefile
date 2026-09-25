@@ -4,17 +4,20 @@ REPO_ROOT    := $(abspath $(MAKEFILE_DIR)/..)
 VERSION      ?= $(shell git -C $(REPO_ROOT) describe --tags 2>/dev/null || echo "dev")
 CACHE_DIR    ?= $(REPO_ROOT)/.build-cache
 OUT_DIR      ?= $(REPO_ROOT)/dist
-DOCKER_IMAGE ?= ubuntu:22.04
+
+DOCKER_UBUNTU ?= ubuntu:22.04
+DOCKER_FEDORA   ?= fedora:latest
 
 HOST_UID := $(shell id -u)
 HOST_GID := $(shell id -g)
 
-.PHONY: help appimage deb clean-cache clean-dist
+.PHONY: help appimage deb rpm clean-cache clean-dist
 
 help:
 	@echo "Available packaging targets:"
-	@echo "  make appimage          - Build Linux AppImage via Docker"
-	@echo "  make deb               - Build Debian (.deb) package via Docker"
+	@echo "  make appimage          - Build Linux AppImage via Docker (Ubuntu 22.04)"
+	@echo "  make deb               - Build Debian (.deb) package via Docker (Ubuntu 22.04)"
+	@echo "  make rpm               - Build RPM (.rpm) package via Docker (AlmaLinux 9)"
 	@echo "  make clean-dist        - Remove dist/ directory"
 	@echo "  make clean-cache       - Remove .build-cache/ directory"
 
@@ -28,7 +31,7 @@ appimage:
 	  -e APP_VERSION="$(VERSION)" \
 	  -e HOST_UID="$(HOST_UID)" \
 	  -e HOST_GID="$(HOST_GID)" \
-	  $(DOCKER_IMAGE) /build-appimage.sh
+	  $(DOCKER_UBUNTU) /build-appimage.sh
 
 deb:
 	@mkdir -p "$(OUT_DIR)"
@@ -39,7 +42,18 @@ deb:
 	  -e APP_VERSION="$(VERSION)" \
 	  -e HOST_UID="$(HOST_UID)" \
 	  -e HOST_GID="$(HOST_GID)" \
-	  $(DOCKER_IMAGE) /build-deb.sh
+	  $(DOCKER_UBUNTU) /build-deb.sh
+
+rpm:
+	@mkdir -p "$(OUT_DIR)"
+	docker run --rm \
+	  -v "$(REPO_ROOT):/app-src:ro" \
+	  -v "$(MAKEFILE_DIR)/build-rpm.sh:/build-rpm.sh:ro" \
+	  -v "$(OUT_DIR):/out" \
+	  -e APP_VERSION="$(VERSION)" \
+	  -e HOST_UID="$(HOST_UID)" \
+	  -e HOST_GID="$(HOST_GID)" \
+	  $(DOCKER_FEDORA) /build-rpm.sh
 
 clean-dist:
 	rm -rf "$(OUT_DIR)"
