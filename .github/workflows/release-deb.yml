@@ -1,4 +1,4 @@
-name: Build AppImage
+name: Build Debian Package for Release
 
 on:
   release:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-appimage:
+  build-deb:
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -15,17 +15,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0 # needed so git describe finds release tags
+          fetch-depth: 0
 
-      - name: Build AppImage via Docker
-        run: make -C package appimage VERSION=${{ github.ref_name }}
+      - name: Build .deb via Docker
+        run: make -C package deb VERSION=${{ github.ref_name }}
 
-      - name: Verify generated AppImage
-        run: ls -lh dist/*.AppImage
+      - name: Verify generated Debian package
+        run: ls -lh dist/*.deb
 
       - name: Upload to Release
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload "${{ github.ref_name }}" dist/*.AppImage --clobber
+          gh release upload "${{ github.ref_name }}" dist/*.deb --clobber
